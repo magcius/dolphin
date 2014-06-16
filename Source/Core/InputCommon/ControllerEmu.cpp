@@ -306,8 +306,7 @@ void ControllerEmu::Force::GetState(C* axis, const u8 base, const R range)
 	}
 }
 
-ControllerEmu::Tilt::Tilt(const std::string& _name)
-	: ControlGroup(_name, GROUP_TYPE_TILT)
+ControllerEmu::Tilt::Tilt(const std::string& _name) : ControlGroup(_name, GROUP_TYPE_TILT)
 {
 	memset(m_tilt, 0, sizeof(m_tilt));
 
