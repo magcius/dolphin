@@ -25,6 +25,8 @@ namespace EMM
 
 #if (defined __APPLE__ || defined __linux__ || defined __FreeBSD__) && !defined(ANDROID)
 #include <execinfo.h>
+
+#if 0
 static void print_trace(const char * msg)
 {
 	void *array[100];
@@ -39,6 +41,8 @@ static void print_trace(const char * msg)
 		printf("--> %s\n", strings[i]);
 	free(strings);
 }
+#endif
+
 #endif
 
 static bool DoFault(u64 bad_address, SContext *ctx)
