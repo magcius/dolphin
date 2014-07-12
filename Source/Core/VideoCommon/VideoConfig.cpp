@@ -35,7 +35,6 @@ VideoConfig::VideoConfig()
 
 	// disable all features by default
 	backend_info.APIType = API_NONE;
-	backend_info.bUseRGBATextures = false;
 	backend_info.bUseMinimalMipCount = false;
 	backend_info.bSupports3DVision = false;
 }
