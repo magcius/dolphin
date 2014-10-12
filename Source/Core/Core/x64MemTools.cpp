@@ -29,6 +29,9 @@ static bool HandleFault(const uintptr_t address, SContext* ctx)
 	if (JitInterface::HandleFault(address, ctx))
 		return true;
 
+	if (Memory::LazyHandleFault(address))
+		return true;
+
 	return false;
 }
 

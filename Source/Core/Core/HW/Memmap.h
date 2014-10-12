@@ -141,4 +141,9 @@ u32 TranslateAddress(u32 _Address, XCheckTLBFlag _Flag);
 void InvalidateTLBEntry(u32 _Address);
 extern u32 pagetable_base;
 extern u32 pagetable_hashmask;
+
+typedef void (*FillMemoryCallback) (void *user_data);
+void SetMemoryLazy(const u32 addr, const u32 size, FillMemoryCallback callback, void* user_data);
+bool LazyHandleFault(uintptr_t addr);
+
 }

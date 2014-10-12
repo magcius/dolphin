@@ -36,6 +36,8 @@
 #include "VideoCommon/PixelEngine.h"
 #include "VideoCommon/VideoBackendBase.h"
 
+#include <sys/mman.h>
+
 namespace Memory
 {
 
@@ -387,6 +389,40 @@ bool IsRAMAddress(const u32 addr, bool allow_locked_cache, bool allow_fake_vmem)
 	default:
 		return false;
 	}
+}
+
+struct LazyMemoryRecord {
+	uintptr_t addrStart;
+	uintptr_t addrEnd;
+	FillMemoryCallback callback;
+	void* user_data;
+};
+
+static std::vector<LazyMemoryRecord> lazyMemoryRecords;
+
+void SetMemoryLazy(const u32 addr, const u32 size, FillMemoryCallback callback, void* user_data)
+{
+	uintptr_t addrStart = GetPointer(addr);
+
+	// Set the memory to crash when we try to access it.
+	mprotect(realAddr, size, PROT_NOACCESS);
+
+	uintptr_t addrEnd = addrStart + size;
+	lazyMemoryRecords.emplace_back(addrStart, addrEnd, callback, user_data);
+}
+
+void LazyHandleFault(uintptr_t addr)
+{
+	for (auto it = lazyMemoryRecords.begin(); it != lazyMemoryRecords.end(); it++) {
+		const LazyMemoryRecord& record = *it;
+		if (addr >= record.addrStart && addr < record.addrEnd) {
+			record.callback(addr, record.user_data);
+			lazyMemoryRecords.erase(it);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 }  // namespace
