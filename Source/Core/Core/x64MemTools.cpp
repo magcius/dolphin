@@ -24,6 +24,14 @@
 namespace EMM
 {
 
+static bool HandleFault(const uintptr_t address, SContext* ctx)
+{
+	if (JitInterface::HandleFault(address, ctx))
+		return true;
+
+	return false;
+}
+
 #ifdef _WIN32
 
 LONG NTAPI Handler(PEXCEPTION_POINTERS pPtrs)
@@ -42,7 +50,7 @@ LONG NTAPI Handler(PEXCEPTION_POINTERS pPtrs)
 			uintptr_t badAddress = (uintptr_t)pPtrs->ExceptionRecord->ExceptionInformation[1];
 			CONTEXT *ctx = pPtrs->ContextRecord;
 
-			if (JitInterface::HandleFault(badAddress, ctx))
+			if (HandleFault(badAddress, ctx))
 			{
 				return (DWORD)EXCEPTION_CONTINUE_EXECUTION;
 			}
@@ -163,7 +171,7 @@ void ExceptionThread(mach_port_t port)
 
 		x86_thread_state64_t *state = (x86_thread_state64_t *) msg_in.old_state;
 
-		bool ok = JitInterface::HandleFault((uintptr_t) msg_in.code[1], state);
+		bool ok = HandleFault((uintptr_t) msg_in.code[1], state);
 
 		// Set up the reply.
 		msg_out.Head.msgh_bits = MACH_MSGH_BITS(MACH_MSGH_BITS_REMOTE(msg_in.Head.msgh_bits), 0);
@@ -233,7 +241,7 @@ static void sigsegv_handler(int sig, siginfo_t *info, void *raw_context)
 	// Get all the information we can out of the context.
 	mcontext_t *ctx = &context->uc_mcontext;
 	// assume it's not a write
-	if (!JitInterface::HandleFault(bad_address, ctx))
+	if (!HandleFault(bad_address, ctx))
 	{
 		// retry and crash
 		signal(SIGSEGV, SIG_DFL);
