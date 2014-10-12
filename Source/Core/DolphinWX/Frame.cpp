@@ -1049,22 +1049,9 @@ void CFrame::OnKeyDown(wxKeyEvent& event)
 			// Toggle aspect ratio
 			g_Config.iAspectRatio = (g_Config.iAspectRatio + 1) & 3;
 		}
-		else if (IsHotkey(event, HK_TOGGLE_EFBCOPIES))
-		{
-			OSDChoice = 3;
-			// Toggle EFB copies between EFB2RAM and EFB2Texture
-			if (!g_Config.bEFBCopyEnable)
-			{
-				OSD::AddMessage("EFB Copies are disabled, enable them in Graphics settings for toggling", 6000);
-			}
-			else
-			{
-				g_Config.bCopyEFBToTexture = !g_Config.bCopyEFBToTexture;
-			}
-		}
 		else if (IsHotkey(event, HK_TOGGLE_FOG))
 		{
-			OSDChoice = 4;
+			OSDChoice = 3;
 			g_Config.bDisableFog = !g_Config.bDisableFog;
 		}
 		else if (IsHotkey(event, HK_TOGGLE_THROTTLE))

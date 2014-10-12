@@ -225,7 +225,6 @@ void HotkeyConfigDialog::CreateHotkeyGUIControls()
 
 		_("Toggle IR"),
 		_("Toggle Aspect Ratio"),
-		_("Toggle EFB Copies"),
 		_("Toggle Fog"),
 		_("Toggle Frame limit"),
 		_("Increase Frame limit"),

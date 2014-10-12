@@ -176,9 +176,7 @@ protected:
 		text_aamode->Enable(vconfig.backend_info.AAModes.size() > 1);
 
 		// EFB copy
-		efbcopy_texture->Enable(vconfig.bEFBCopyEnable);
-		efbcopy_ram->Enable(vconfig.bEFBCopyEnable);
-		cache_efb_copies->Enable(vconfig.bEFBCopyEnable && !vconfig.bCopyEFBToTexture);
+		cache_efb_copies->Enable(!vconfig.bCopyEFBToTexture);
 
 		// XFB
 		virtual_xfb->Enable(vconfig.bUseXFB);

@@ -134,7 +134,6 @@ private:
 		int s_colorsamples;
 		bool s_copy_efb_to_texture;
 		bool s_copy_efb_scaled;
-		bool s_copy_efb;
 		int s_efb_scale;
 		bool s_texfmt_overlay;
 		bool s_texfmt_overlay_center;
