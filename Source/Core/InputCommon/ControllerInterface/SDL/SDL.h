@@ -33,17 +33,6 @@ class Joystick : public Core::Device
 {
 private:
 
-#ifdef USE_SDL_HAPTIC
-	struct EffectIDState
-	{
-		EffectIDState() : effect(SDL_HapticEffect()), id(-1), changed(false) {}
-
-		SDL_HapticEffect effect;
-		int              id;
-		bool             changed;
-	};
-#endif
-
 	class Button : public Core::Device::Input
 	{
 	public:
@@ -80,34 +69,38 @@ private:
 	};
 
 #ifdef USE_SDL_HAPTIC
-	class ConstantEffect : public Output
+	class HapticEffect : public Output
+	{
+	protected:
+		HapticEffect(SDL_Haptic *haptic) : m_haptic(haptic), id(-1) {}
+		~HapticEffect() { effect.type = 0; Update(); }
+		void Update();
+
+		SDL_HapticEffect effect;
+	private:
+		SDL_Haptic* m_haptic;
+		int id;
+	};
+
+	class ConstantEffect : public HapticEffect
 	{
 	public:
 		std::string GetName() const override;
-		ConstantEffect(EffectIDState& effect) : m_effect(effect) {}
 		void SetState(ControlState state) override;
-	private:
-		EffectIDState& m_effect;
 	};
 
 	class RampEffect : public Output
 	{
 	public:
 		std::string GetName() const override;
-		RampEffect(EffectIDState& effect) : m_effect(effect) {}
 		void SetState(ControlState state) override;
-	private:
-		EffectIDState& m_effect;
 	};
 
 	class SineEffect : public Output
 	{
 	public:
 		std::string GetName() const override;
-		SineEffect(EffectIDState& effect) : m_effect(effect) {}
 		void SetState(ControlState state) override;
-	private:
-		EffectIDState& m_effect;
 	};
 
 #ifdef SDL_HAPTIC_SQUARE
@@ -115,10 +108,7 @@ private:
 	{
 	public:
 		std::string GetName() const;
-		SquareEffect(EffectIDState& effect) : m_effect(effect) {}
 		void SetState(ControlState state);
-	private:
-		EffectIDState& m_effect;
 	};
 #endif // defined(SDL_HAPTIC_SQUARE)
 
@@ -126,16 +116,12 @@ private:
 	{
 	public:
 		std::string GetName() const override;
-		TriangleEffect(EffectIDState& effect) : m_effect(effect) {}
 		void SetState(ControlState state) override;
-	private:
-		EffectIDState& m_effect;
 	};
 #endif
 
 public:
 	void UpdateInput() override;
-	void UpdateOutput() override;
 
 	Joystick(SDL_Joystick* const joystick, const int sdl_index, const unsigned int index);
 	~Joystick();

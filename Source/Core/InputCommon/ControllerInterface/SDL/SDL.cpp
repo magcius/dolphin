@@ -121,40 +121,26 @@ Joystick::Joystick(SDL_Joystick* const joystick, const int sdl_index, const unsi
 
 		// constant effect
 		if (supported_effects & SDL_HAPTIC_CONSTANT)
-		{
-			m_state_out.push_back(EffectIDState());
-			AddOutput(new ConstantEffect(m_state_out.back()));
-		}
+			AddOutput(new ConstantEffect(m_haptic));
 
 		// ramp effect
 		if (supported_effects & SDL_HAPTIC_RAMP)
-		{
-			m_state_out.push_back(EffectIDState());
-			AddOutput(new RampEffect(m_state_out.back()));
-		}
+			AddOutput(new RampEffect(m_haptic));
 
 		// sine effect
 		if (supported_effects & SDL_HAPTIC_SINE)
-		{
-			m_state_out.push_back(EffectIDState());
-			AddOutput(new SineEffect(m_state_out.back()));
-		}
+			AddOutput(new SineEffect(m_haptic));
 
 #ifdef SDL_HAPTIC_SQUARE
 		// square effect
 		if (supported_effects & SDL_HAPTIC_SQUARE)
-		{
-			m_state_out.push_back(EffectIDState());
-			AddOutput(new SquareEffect(m_state_out.back()));
-		}
+			AddOutput(new SquareEffect(m_haptic));
+
 #endif // defined(SDL_HAPTIC_SQUARE)
 
 		// triangle effect
 		if (supported_effects & SDL_HAPTIC_TRIANGLE)
-		{
-			m_state_out.push_back(EffectIDState());
-			AddOutput(new TriangleEffect(m_state_out.back()));
-		}
+			AddOutput(new TriangleEffect());
 	}
 #endif
 
@@ -184,6 +170,20 @@ Joystick::~Joystick()
 }
 
 #ifdef USE_SDL_HAPTIC
+void HapticEffect::Update() {
+	if (id == -1 && effect.type > 0) {
+		id = SDL_HapticNewEffect(m_haptic, &effect);
+		if (id > -1)
+			SDL_HapticRunEffect(m_haptic, id, 1);
+	} else if (id > -1 && effec.type == 0) {
+		SDL_HapticStopEffect(m_haptic, id);
+		SDL_HapticDestroyEffect(m_haptic, id);
+		id = -1;
+	} else if (id > -1) {
+		SDL_HapticUpdateEffect(m_haptic, id, &effect);
+	}
+}
+
 std::string Joystick::ConstantEffect::GetName() const
 {
 	return "Constant";
@@ -241,10 +241,8 @@ void Joystick::RampEffect::SetState(ControlState state)
 		m_effect.effect.type = 0;
 	}
 
-	const Sint16 old = m_effect.effect.ramp.start;
 	m_effect.effect.ramp.start = (Sint16)(state * 0x7FFF);
-	if (old != m_effect.effect.ramp.start)
-		m_effect.changed = true;
+	Update();
 }
 
 void Joystick::SineEffect::SetState(ControlState state)
@@ -259,14 +257,11 @@ void Joystick::SineEffect::SetState(ControlState state)
 		m_effect.effect.type = 0;
 	}
 
-	const Sint16 old = m_effect.effect.periodic.magnitude;
 	m_effect.effect.periodic.period = 5;
 	m_effect.effect.periodic.magnitude = (Sint16)(state * 0x5000);
 	m_effect.effect.periodic.attack_length = 0;
 	m_effect.effect.periodic.fade_length = 500;
-
-	if (old != m_effect.effect.periodic.magnitude)
-		m_effect.changed = true;
+	Update();
 }
 
 #ifdef SDL_HAPTIC_SQUARE
@@ -282,14 +277,11 @@ void Joystick::SquareEffect::SetState(ControlState state)
 		m_effect.effect.type = 0;
 	}
 
-	const Sint16 old = m_effect.effect.periodic.magnitude;
 	m_effect.effect.periodic.period = 5;
 	m_effect.effect.periodic.magnitude = state * 0x5000;
 	m_effect.effect.periodic.attack_length = 0;
 	m_effect.effect.periodic.fade_length = 100;
-
-	if (old != m_effect.effect.periodic.magnitude)
-		m_effect.changed = true;
+	Update();
 }
 #endif // defined(SDL_HAPTIC_SQUARE)
 
@@ -305,14 +297,11 @@ void Joystick::TriangleEffect::SetState(ControlState state)
 		m_effect.effect.type = 0;
 	}
 
-	const Sint16 old = m_effect.effect.periodic.magnitude;
 	m_effect.effect.periodic.period = 5;
 	m_effect.effect.periodic.magnitude = (Sint16)(state * 0x5000);
 	m_effect.effect.periodic.attack_length = 0;
 	m_effect.effect.periodic.fade_length = 100;
-
-	if (old != m_effect.effect.periodic.magnitude)
-		m_effect.changed = true;
+	Update();
 }
 #endif
 
@@ -320,43 +309,6 @@ void Joystick::UpdateInput()
 {
 	// each joystick is doin this, o well
 	SDL_JoystickUpdate();
-}
-
-void Joystick::UpdateOutput()
-{
-#ifdef USE_SDL_HAPTIC
-	for (auto &i : m_state_out)
-	{
-		if (i.changed) // if SetState was called on this output
-		{
-			if (-1 == i.id) // effect isn't currently uploaded
-			{
-				if (i.effect.type) // if outputstate is >0  this would be true
-				{
-					if ((i.id = SDL_HapticNewEffect(m_haptic, &i.effect)) > -1) // upload the effect
-					{
-						SDL_HapticRunEffect(m_haptic, i.id, 1); // run the effect
-					}
-				}
-			}
-			else // effect is already uploaded
-			{
-				if (i.effect.type) // if ouputstate >0
-				{
-					SDL_HapticUpdateEffect(m_haptic, i.id, &i.effect); // update the effect
-				}
-				else
-				{
-					SDL_HapticStopEffect(m_haptic, i.id); // else, stop and remove the effect
-					SDL_HapticDestroyEffect(m_haptic, i.id);
-					i.id = -1; // mark it as not uploaded
-				}
-			}
-
-			i.changed = false;
-		}
-	}
-#endif
 }
 
 std::string Joystick::GetName() const
