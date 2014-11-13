@@ -76,19 +76,8 @@ private:
 		const bool m_positive;
 	};
 
-	class Light : public Output
-	{
-	public:
-		std::string GetName() const;
-		Light(u8 index) : m_index(index) {}
-		void SetState(ControlState state);
-	private:
-		const u8 m_index;
-	};
-
 public:
 	bool UpdateInput();
-	bool UpdateOutput();
 
 	KeyboardMouse(const LPDIRECTINPUTDEVICE8 kb_device, const LPDIRECTINPUTDEVICE8 mo_device);
 	~KeyboardMouse();
