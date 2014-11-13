@@ -141,7 +141,7 @@ void GetMousePos(float* const x, float* const y)
 	*y = (float)point.y / (float)win_height * 2 - 1;
 }
 
-bool KeyboardMouse::UpdateInput()
+void KeyboardMouse::UpdateInput()
 {
 	DIMOUSESTATE2 tmp_mouse;
 
@@ -177,11 +177,7 @@ bool KeyboardMouse::UpdateInput()
 
 		// update mouse cursor
 		GetMousePos(&m_state_in.cursor.x, &m_state_in.cursor.y);
-
-		return true;
 	}
-
-	return false;
 }
 
 std::string KeyboardMouse::GetName() const
