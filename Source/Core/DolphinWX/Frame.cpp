@@ -262,7 +262,6 @@ EVT_MENU(IDM_CONFIG_GFX_BACKEND, CFrame::OnConfigGFX)
 EVT_MENU(IDM_CONFIG_AUDIO, CFrame::OnConfigAudio)
 EVT_MENU(IDM_CONFIG_CONTROLLERS, CFrame::OnConfigControllers)
 EVT_MENU(IDM_CONFIG_HOTKEYS, CFrame::OnConfigHotkey)
-EVT_MENU(IDM_CONFIG_MENU_COMMANDS, CFrame::OnConfigMenuCommands)
 
 EVT_MENU(IDM_SAVE_PERSPECTIVE, CFrame::OnPerspectiveMenu)
 EVT_MENU(IDM_EDIT_PERSPECTIVES, CFrame::OnPerspectiveMenu)
@@ -932,15 +931,10 @@ void CFrame::OnGameListCtrlItemActivated(wxListEvent& WXUNUSED(event))
 
 static bool IsHotkey(wxKeyEvent &event, int id, bool held = false)
 {
-	// Input event hotkey
-	if (event.GetKeyCode() == WXK_NONE)
-	{
-		return HotkeyManagerEmu::IsPressed(id, held);
-	}
+	if (Core::GetState() == Core::CORE_UNINITIALIZED)
+		return false;
 
-	return (event.GetKeyCode() != WXK_NONE &&
-		event.GetKeyCode() == SConfig::GetInstance().m_LocalCoreStartupParameter.iHotkey[id] &&
-		event.GetModifiers() == SConfig::GetInstance().m_LocalCoreStartupParameter.iHotkeyModifier[id]);
+	return HotkeyManagerEmu::IsPressed(id, held);
 }
 
 int GetCmdForHotkey(unsigned int key)
@@ -1075,41 +1069,6 @@ bool TASInputHasFocus()
 			return true;
 	}
 	return false;
-}
-
-void CFrame::OnKeyDown(wxKeyEvent& event)
-{
-	if (Core::GetState() != Core::CORE_UNINITIALIZED &&
-	    (RendererHasFocus() || TASInputHasFocus()))
-	{
-		if (IsHotkey(event, HK_TOGGLE_THROTTLE))
-		{
-			Core::SetIsFramelimiterTempDisabled(true);
-		}
-		else
-		{
-			ParseHotkeys(event);
-		}
-	}
-	else
-	{
-		event.Skip();
-	}
-}
-
-void CFrame::OnKeyUp(wxKeyEvent& event)
-{
-	if (Core::IsRunning() && (RendererHasFocus() || TASInputHasFocus()))
-	{
-		if (IsHotkey(event, HK_TOGGLE_THROTTLE))
-		{
-			Core::SetIsFramelimiterTempDisabled(false);
-		}
-	}
-	else
-	{
-		event.Skip();
-	}
 }
 
 void CFrame::OnMouse(wxMouseEvent& event)

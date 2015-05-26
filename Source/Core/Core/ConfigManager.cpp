@@ -178,7 +178,6 @@ void SConfig::SaveSettings()
 
 	SaveGeneralSettings(ini);
 	SaveInterfaceSettings(ini);
-	SaveHotkeySettings(ini);
 	SaveDisplaySettings(ini);
 	SaveGameListSettings(ini);
 	SaveCoreSettings(ini);
@@ -249,18 +248,6 @@ void SConfig::SaveInterfaceSettings(IniFile& ini)
 	interface->Set("ExtendedFPSInfo", m_InterfaceExtendedFPSInfo);
 	interface->Set("ThemeName40", m_LocalCoreStartupParameter.theme_name);
 	interface->Set("PauseOnFocusLost", m_PauseOnFocusLost);
-}
-
-void SConfig::SaveHotkeySettings(IniFile& ini)
-{
-	IniFile::Section* hotkeys = ini.GetOrCreateSection("Hotkeys");
-
-	for (int i = 0; i < NUM_HOTKEYS; i++)
-	{
-		hotkeys->Set(g_HKData[i].IniText, m_LocalCoreStartupParameter.iHotkey[i]);
-		hotkeys->Set(std::string(g_HKData[i].IniText) + "Modifier",
-			m_LocalCoreStartupParameter.iHotkeyModifier[i]);
-	}
 }
 
 void SConfig::SaveDisplaySettings(IniFile& ini)
@@ -407,7 +394,6 @@ void SConfig::LoadSettings()
 
 	LoadGeneralSettings(ini);
 	LoadInterfaceSettings(ini);
-	LoadHotkeySettings(ini);
 	LoadDisplaySettings(ini);
 	LoadGameListSettings(ini);
 	LoadCoreSettings(ini);
@@ -501,19 +487,6 @@ void SConfig::LoadInterfaceSettings(IniFile& ini)
 	interface->Get("ExtendedFPSInfo",         &m_InterfaceExtendedFPSInfo,                    false);
 	interface->Get("ThemeName40",             &m_LocalCoreStartupParameter.theme_name,        "Clean");
 	interface->Get("PauseOnFocusLost",        &m_PauseOnFocusLost,                            false);
-}
-
-void SConfig::LoadHotkeySettings(IniFile& ini)
-{
-	IniFile::Section* hotkeys = ini.GetOrCreateSection("Hotkeys");
-
-	for (int i = 0; i < NUM_HOTKEYS; i++)
-	{
-		hotkeys->Get(g_HKData[i].IniText,
-		    &m_LocalCoreStartupParameter.iHotkey[i], g_HKData[i].DefaultKey);
-		hotkeys->Get(std::string(g_HKData[i].IniText) + "Modifier",
-		    &m_LocalCoreStartupParameter.iHotkeyModifier[i], g_HKData[i].DefaultModifier);
-	}
 }
 
 void SConfig::LoadDisplaySettings(IniFile& ini)
