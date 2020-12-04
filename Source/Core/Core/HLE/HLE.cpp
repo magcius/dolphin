@@ -108,6 +108,10 @@ void PatchFunctions()
     }
   }
 
+  // JHIReport
+  s_hooked_addresses[0x805b41d0] = 4;
+  PowerPC::ppcState.iCache.Invalidate(0x805b41d0);
+
   for (u32 i = 1; i < os_patches.size(); ++i)
   {
     // Fixed hooks don't map to symbols

@@ -6,8 +6,12 @@
 
 #include <array>
 #include <string>
+#include <thread>
+
+#include <SFML/Network.hpp>
 
 #include "Common/BitUtils.h"
+#include "Common/Flag.h"
 #include "Core/HW/EXI/EXI_Device.h"
 
 class PointerWrap;
@@ -50,6 +54,8 @@ private:
     WII_RTC_SIZE = 0x40,
     EUART_BASE = 0xc00000,
     EUART_SIZE = 8,
+    EXIUSB_SHM_BASE = 0xd10000,
+    EXIUSB_SHM_SIZE = 0x002000,
   };
 
   struct
@@ -69,6 +75,13 @@ private:
 
   std::string m_buffer;
   bool m_fonts_loaded{};
+
+  void EXIUSB_ClientThread();
+  void EXIUSB_SendCommand(short buf_idx, char cmd, u8 value);
+  u8 m_exiusb_shm[EXIUSB_SHM_SIZE];
+  sf::UdpSocket m_exiusb_client;
+  std::thread m_exiusb_thread;
+  Common::Flag m_exiusb_shutdown;
 
   void UpdateRTC();
 
