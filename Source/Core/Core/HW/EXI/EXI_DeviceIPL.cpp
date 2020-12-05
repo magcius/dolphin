@@ -99,53 +99,6 @@ void CEXIIPL::Descrambler(u8* data, u32 size)
   }
 }
 
-void CEXIIPL::EXIUSB_ClientThread()
-{
-  while (!m_exiusb_shutdown.IsSet())
-  {
-    u8 message[4] = {};
-    sf::IpAddress addr;
-    unsigned short port;
-    size_t received;
-
-    sf::Socket::Status status = m_exiusb_client.receive((void*)message, sizeof(message), received, addr, port);
-    if (status != sf::Socket::Status::Done)
-      continue;
-
-    if (received != sizeof(message))
-      continue;
-
-    if (message[2] == 'W')
-    {
-      int buf_idx = (message[1] << 8) | message[0];
-      if (buf_idx < 0 || buf_idx >= sizeof(m_exiusb_shm))
-        continue;
-
-      m_exiusb_shm[buf_idx] = message[3];
-    }
-    else if (message[2] == 'H')
-    {
-      for (int buf_idx = 0; buf_idx < sizeof(m_exiusb_shm); buf_idx++)
-      {
-        u8 data = m_exiusb_shm[buf_idx];
-        if (data != 0)
-          EXIUSB_SendCommand(buf_idx, 'W', data);
-      }
-    }
-  }
-}
-
-void CEXIIPL::EXIUSB_SendCommand(short buf_idx, char cmd, u8 value)
-{
-  char message[4] = {};
-  memcpy(&message[0], &buf_idx, sizeof(buf_idx));
-  message[2] = cmd;
-  message[3] = value;
-
-  // Forward access over our socket. Unfortunately, the overhead here is massive.
-  m_exiusb_client.send(message, sizeof(message), "127.0.0.1", 1234);
-}
-
 CEXIIPL::CEXIIPL()
 {
   // Fill the ROM
@@ -187,14 +140,11 @@ CEXIIPL::CEXIIPL()
     g_SRAM.settings.rtc_bias = 0;
   FixSRAMChecksums();
 
-  // Try to connect to our host EXIUSB socket.
-  m_exiusb_client.setBlocking(false);
-  m_exiusb_client.bind(1235);
-  u8 handshake[1] = {0x55};
-  m_exiusb_client.send(handshake, sizeof(handshake), "127.0.0.1", 1234);
-  m_exiusb_thread = std::thread(&CEXIIPL::EXIUSB_ClientThread, this);
-
-  memset(m_exiusb_shm, 0, sizeof(m_exiusb_shm));
+  m_exiusb_handle = OpenFileMappingA(FILE_MAP_ALL_ACCESS, false, "Dolphin-EXIUSB-0");
+  if (m_exiusb_handle != nullptr)
+  {
+    m_exiusb_shm = (u8*) MapViewOfFile(m_exiusb_handle, FILE_MAP_ALL_ACCESS, 0, 0, EXIUSB_SHM_SIZE);
+  }
 }
 
 CEXIIPL::~CEXIIPL()
@@ -206,11 +156,18 @@ CEXIIPL::~CEXIIPL()
     file.WriteArray(&g_SRAM, 1);
   }
 
-  u8 handshake[1] = {0x44};
-  m_exiusb_client.send(handshake, sizeof(handshake), "127.0.0.1", 1234);
+  if (m_exiusb_shm)
+  {
+    // To signal disconnection, stomp 0x04 - 0x08 with Kbai
+    m_exiusb_shm[4] = 'K';
+    m_exiusb_shm[5] = 'b';
+    m_exiusb_shm[6] = 'a';
+    m_exiusb_shm[7] = 'i';
 
-  m_exiusb_shutdown.Set();
-  m_exiusb_thread.join();
+    UnmapViewOfFile(m_exiusb_shm);
+  }
+  if (m_exiusb_handle)
+    CloseHandle(m_exiusb_handle);
 }
 void CEXIIPL::DoState(PointerWrap& p)
 {
@@ -451,18 +408,23 @@ void CEXIIPL::TransferByte(u8& data)
     }
     else if (IN_RANGE(EXIUSB_SHM))
     {
-      short buf_idx = DEV_ADDR_CURSOR(EXIUSB_SHM);
-      u8 *ptr = &m_exiusb_shm[buf_idx];
-
-      if (m_command.is_write())
+      if (m_exiusb_shm != nullptr)
       {
-        *ptr = data;
+        short buf_idx = DEV_ADDR_CURSOR(EXIUSB_SHM);
+        u8* ptr = &m_exiusb_shm[buf_idx];
 
-        EXIUSB_SendCommand(buf_idx, 'W', data);
+        if (m_command.is_write())
+        {
+          *ptr = data;
+        }
+        else
+        {
+          data = *ptr;
+        }
       }
       else
       {
-        data = *ptr;
+        NOTICE_LOG_FMT(EXPANSIONINTERFACE, "IPL-DEV EXI-USB without SHM");
       }
     }
     else

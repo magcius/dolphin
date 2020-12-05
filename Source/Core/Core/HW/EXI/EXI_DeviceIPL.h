@@ -9,6 +9,7 @@
 #include <thread>
 
 #include <SFML/Network.hpp>
+#include <windows.h>
 
 #include "Common/BitUtils.h"
 #include "Common/Flag.h"
@@ -76,12 +77,8 @@ private:
   std::string m_buffer;
   bool m_fonts_loaded{};
 
-  void EXIUSB_ClientThread();
-  void EXIUSB_SendCommand(short buf_idx, char cmd, u8 value);
-  u8 m_exiusb_shm[EXIUSB_SHM_SIZE];
-  sf::UdpSocket m_exiusb_client;
-  std::thread m_exiusb_thread;
-  Common::Flag m_exiusb_shutdown;
+  HANDLE m_exiusb_handle{};
+  u8* m_exiusb_shm{};
 
   void UpdateRTC();
 
